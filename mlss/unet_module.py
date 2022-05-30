@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchmetrics
 from typing import Any, Dict, List, Tuple
 from pytorch_lightning.callbacks.base import Callback
-from unet import UNET, ImageBatch, Logits, SemanticBatch
+from mlss.unet import UNET, ImageBatch, Logits, SemanticBatch
 import operator
 import torch
 

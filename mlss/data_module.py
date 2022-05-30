@@ -4,7 +4,6 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor, transforms
 
 
-batch_size = 10
 
 transformations = transforms.Compose([
     transforms.ToTensor(),
@@ -13,26 +12,32 @@ transformations = transforms.Compose([
     ])
 
 
-class CityScapesDataModule(pl.LightingDataModule):
+class CelebADataModule(pl.LightingDataModule):
+    def __init__(self,batch_size=32):
+        self.batch_size=batch_size
+
     def prepare_data(self):
 
 
-        self.training_data = datasets.Cityscapes(
-        root =r'.\mlss\CityScapes',
+        self.training_data = datasets.CelebA(
+        root =r'.\mlss\CelebA',
         split='train',  
-        transform=transformations
+        transform=transformations,
+        download=True
         )
 
-        self.validation_data = datasets.Cityscapes(
-            root =r'.\mlss\CityScapes',
-            split='val',  
-            transform=transformations
+        self.validation_data = datasets.CelebA(
+            root =r'.\mlss\CelebA',
+            split='valid',  
+            transform=transformations,
+            download=True
         )
 
-        self.test_data = datasets.Cityscapes(
-        root=r'\mlss\CityScapes',
-        split='test',
-        transform=transformations
+        self.test_data = datasets.CelebA(
+            root=r'.\mlss\CelebA',
+            split='test',
+            transform=transformations,
+            download=True
         )
 
 
@@ -40,7 +45,7 @@ class CityScapesDataModule(pl.LightingDataModule):
 
         train_loader = DataLoader(
         self.training_data,
-        batch_size=batch_size,
+        batch_size=self.batch_size,
         shuffle=True,
         num_workers=0,
         pin_memory=True,
@@ -54,7 +59,7 @@ class CityScapesDataModule(pl.LightingDataModule):
 
         val_loader = DataLoader(
         self.validation_data,
-        batch_size=batch_size,
+        batch_size=self.batch_size,
         shuffle=True,
         num_workers=0,
         pin_memory=True,
@@ -67,7 +72,7 @@ class CityScapesDataModule(pl.LightingDataModule):
 
         test_loader = DataLoader(
         self.test_data,
-        batch_size=batch_size,
+        batch_size=self.batch_size,
         shuffle=False,
         num_workers=0,
         drop_last=True)

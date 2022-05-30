@@ -1,4 +1,4 @@
-from .typing import ImageBatch, Logits
+from .typing import ImageBatch, Logits, SemanticBatch
 from typing import Tuple
 import torch
 import torch.nn as nn

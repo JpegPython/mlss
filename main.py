@@ -34,7 +34,7 @@ def main(args: argparse.Namespace) -> None:
 
     data=CityScapesDataModule()
 
-    model=UNETModule(in_channels=2,num_classes=3, lr=0.001)
+    model=UNETModule(in_channels=2,num_classes=3, lr=0.001,early_stopping_patience=100,lr_scheduler_patience=10)
 
     trainer = Trainer(gpus=1)
 
