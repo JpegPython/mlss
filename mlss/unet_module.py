@@ -1,5 +1,8 @@
 import pytorch_lightning as pl
+import torch
+
 import torch.nn as nn
+import torch.nn.functional as F
 import torchmetrics
 from typing import Any, Dict, List, Tuple
 from pytorch_lightning.callbacks.base import Callback
@@ -11,18 +14,20 @@ import torch
 class UNETModule(pl.LightningModule):
 
     def __init__(self, in_channels: int, num_classes: int, lr: float, early_stopping_patience: int, lr_scheduler_patience: int) -> None:
-        super().__init__()
-        if num_classes > 2:
-            raise ValueError('Expected more than two classes (num_classes > 2)')
+        super(UNETModule,self).__init__()
+        if num_classes < 2:
+            raise ValueError('Expected more than two classes (num_classes < 2)')
         if early_stopping_patience <= lr_scheduler_patience:
             raise ValueError('Invalid patience values (early_stopping_patience <= lr_scheduler_patience)')
         self.save_hyperparameters()
+
         # Set ome properties.
         self.lr = lr
         self.early_stopping_patience = early_stopping_patience
         self.lr_scheduler_patience = lr_scheduler_patience
         # Create the U-Net network.
-        self.net = UNET(enc_channels=(in_channels, 64, 128, 256, 512, 1024), dec_channels=(1024, 512, 256, 128, num_classes))
+        # num_class=num_classes
+        self.net = UNET(num_classes=num_classes,enc_chs=(in_channels, 64, 128, 256, 512, 1024), dec_chs=(1024, 512, 256, 128, 64))
         # Create the loss and metrics's functions.
         self.loss_fn = nn.CrossEntropyLoss()
 
@@ -30,8 +35,15 @@ class UNETModule(pl.LightningModule):
         images, targets = batch
         # Apply the semantic segmentation network.
         logits = self.net(images)
+
+        t=[]
+        for te in targets:
+            k=torch.zeros((572,572)).fill_(te).long()
+            t.append(k)
+        target=torch.stack(t)
+
         # Compute and log the loss and the accuracy based on model output and real labels.
-        loss = self.loss_fn(logits, targets)
+        loss = self.loss_fn(logits, target)
         self.log(f'{task}/Loss/Step', loss)
         acc = torchmetrics.functional.accuracy(logits, targets)
         self.log(f'{task}/Accuracy/Step', acc)
@@ -46,22 +58,22 @@ class UNETModule(pl.LightningModule):
         self.log(f'{task}/Accuracy', acc.mean())
     
     def training_step(self, batch: Tuple[ImageBatch, SemanticBatch], batch_idx: int) -> Dict[str, Any]:
-        return self._common_step(batch, 'Train')
+        return self._common_step(batch, 'train')
 
     def training_epoch_end(self, step_outputs: List[Dict[str, Any]]) -> None:
-        self._common_epoch_end(step_outputs, 'Train')
+        self._common_epoch_end(step_outputs, 'train')
 
     def validation_step(self, batch: Tuple[ImageBatch, SemanticBatch], batch_idx: int) -> Dict[str, Any]:
-        return self._common_step(batch, 'Val')
+        return self._common_step(batch, 'val')
 
     def validation_epoch_end(self, step_outputs: List[Dict[str, Any]]) -> None:
-        self._common_epoch_end(step_outputs, 'Val')
+        self._common_epoch_end(step_outputs, 'val')
 
     def test_step(self, batch: Tuple[ImageBatch, SemanticBatch], batch_idx: int) -> Dict[str, Any]:
-        return self._common_step(batch, 'Test')
+        return self._common_step(batch, 'test')
 
     def test_epoch_end(self, step_outputs: List[Dict[str, Any]]) -> None:
-        self._common_epoch_end(step_outputs, 'Test')
+        self._common_epoch_end(step_outputs, 'test')
 
     def configure_callbacks(self) -> List[Callback]:
         # Apply early stopping.

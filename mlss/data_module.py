@@ -1,83 +1,89 @@
+
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
+from torch.utils.data.dataset import random_split
 from torchvision import datasets
 from torchvision.transforms import ToTensor, transforms
 
 
 
-transformations = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Resize(572),
-    transforms.CenterCrop(572)
-    ])
-
-
-class CelebADataModule(pl.LightingDataModule):
-    def __init__(self,batch_size=32):
+class GTSRBDataModule(pl.LightningDataModule):
+    def __init__(self,batch_size, device='cuda'):
         self.batch_size=batch_size
+        self.prepare_data_per_node = True
+        
+        self._log_hyperparams = False
 
     def prepare_data(self):
+        datasets.GTSRB(root=r'.\mlss\GTSRB',split='train',download=True)
+        datasets.GTSRB(root=r'.\mlss\GTSRB',split='test',download=True)
 
+    def setup(self,stage=None):
 
-        self.training_data = datasets.CelebA(
-        root =r'.\mlss\CelebA',
-        split='train',  
-        transform=transformations,
-        download=True
+        transformations = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize(572),
+        transforms.CenterCrop(572)
+        ])
+
+        GTSRB_train=datasets.GTSRB(
+            root =r'.\mlss\GTSRB',
+            split='train', 
+            transform=transformations
         )
-
-        self.validation_data = datasets.CelebA(
-            root =r'.\mlss\CelebA',
-            split='valid',  
-            transform=transformations,
-            download=True
-        )
-
-        self.test_data = datasets.CelebA(
-            root=r'.\mlss\CelebA',
+        
+        self.GTSRB_test=datasets.GTSRB(
+            root =r'.\mlss\GTSRB',
             split='test',
-            transform=transformations,
-            download=True
+            transform=transformations
         )
+
+        train_data_size=int(len(GTSRB_train) * 0.8)
+        valid_data_size=len(GTSRB_train)-train_data_size
+
+        self.GTSRB_train,self.GTSRB_val=random_split(GTSRB_train,[train_data_size,valid_data_size])
+        self.GTSRB_test=datasets.GTSRB(root='.\mlss\GTSRB',split='test')
+
+
 
 
     def train_dataloader(self):
 
-        train_loader = DataLoader(
-        self.training_data,
+        GTSRB_train = DataLoader(
+        self.GTSRB_train,
         batch_size=self.batch_size,
         shuffle=True,
-        num_workers=0,
-        pin_memory=True,
+        num_workers=2,
+        pin_memory=False,
         drop_last=True)
 
-        return train_loader
+        return GTSRB_train
 
 
     
     def val_dataloader(self):
 
-        val_loader = DataLoader(
-        self.validation_data,
+        GTSRB_val = DataLoader(
+        self.GTSRB_val,
         batch_size=self.batch_size,
-        shuffle=True,
-        num_workers=0,
-        pin_memory=True,
+        shuffle=False,
+        num_workers=2,
+        pin_memory=False,
         drop_last=True)
 
-        return val_loader
+        return GTSRB_val
 
 
     def test_dataloader(self):
 
-        test_loader = DataLoader(
-        self.test_data,
+        GTSRB_test = DataLoader(
+        self.GTSRB_test,
         batch_size=self.batch_size,
         shuffle=False,
-        num_workers=0,
+        num_workers=2,
         drop_last=True)
 
-        return test_loader
+        return GTSRB_test
 
 
 

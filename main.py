@@ -1,17 +1,11 @@
 import argparse
 
 from pytorch_lightning import Trainer
-from mlss.data_module import CityScapesDataModule
+import torch
+from mlss.data_module import GTSRBDataModule
 from mlss.unet_module import UNETModule
 
 
-
-
-import numpy as np
-import torchvision
-
-
-import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.optim import Adam
@@ -30,16 +24,23 @@ from torch.optim import Adam
 
 def main(args: argparse.Namespace) -> None:
 
+    batch_size=8
     
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("The model will be running on", device, "device")
 
-    data=CityScapesDataModule()
+    data=GTSRBDataModule(batch_size)
 
-    model=UNETModule(in_channels=2,num_classes=3, lr=0.001,early_stopping_patience=100,lr_scheduler_patience=10)
+    model=UNETModule(in_channels=3,num_classes=32, lr=0.001, early_stopping_patience=100, lr_scheduler_patience=10)
+    
+    
+    
+    model.to(device)
 
     trainer = Trainer(gpus=1)
 
-    trainer.fit(model, data)
-    trainer.test(model, data)
+    trainer.fit(model, datamodule=data)
+    
 
 
 
@@ -50,3 +51,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # Call the main mehtod.
     main(args)
+
