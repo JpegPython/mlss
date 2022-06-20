@@ -38,7 +38,7 @@ class UNETModule(pl.LightningModule):
 
         t=[]
         for te in targets:
-            k=torch.zeros((572,572)).fill_(te).long()
+            k=torch.zeros((572,572),devices=logits.device()).fill_(te).long()
             t.append(k)
         target=torch.stack(t)
 

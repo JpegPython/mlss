@@ -26,16 +26,11 @@ def main(args: argparse.Namespace) -> None:
 
     batch_size=8
     
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print("The model will be running on", device, "device")
-
+    
     data=GTSRBDataModule(batch_size)
 
     model=UNETModule(in_channels=3,num_classes=32, lr=0.001, early_stopping_patience=100, lr_scheduler_patience=10)
     
-    
-    
-    model.to(device)
 
     trainer = Trainer(gpus=1)
 

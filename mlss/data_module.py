@@ -26,16 +26,26 @@ class GTSRBDataModule(pl.LightningDataModule):
         transforms.CenterCrop(572)
         ])
 
+        target_transformations= transforms.Compose([
+          transforms.ToTensor(),
+          #TODO: resize targets 
+          transforms.CenterCrop(572)
+        ])
+
         GTSRB_train=datasets.GTSRB(
             root =r'.\mlss\GTSRB',
             split='train', 
-            transform=transformations
+            transform=transformations,
+            target_transform=target_transformations
+            
+            
         )
         
         self.GTSRB_test=datasets.GTSRB(
             root =r'.\mlss\GTSRB',
             split='test',
-            transform=transformations
+            transform=transformations,
+            target_transform=target_transformations       
         )
 
         train_data_size=int(len(GTSRB_train) * 0.8)
@@ -54,7 +64,7 @@ class GTSRBDataModule(pl.LightningDataModule):
         batch_size=self.batch_size,
         shuffle=True,
         num_workers=2,
-        pin_memory=False,
+        pin_memory=True,
         drop_last=True)
 
         return GTSRB_train
