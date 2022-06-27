@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from torchvision import datasets
 from torchvision.transforms import ToTensor, transforms
-
+import torch
 
 
 class GTSRBDataModule(pl.LightningDataModule):
@@ -27,11 +27,8 @@ class GTSRBDataModule(pl.LightningDataModule):
         ])
 
         target_transformations= transforms.Compose([
-          transforms.ToTensor(),
-          #TODO: resize targets 
-          transforms.CenterCrop(572)
+          transforms.Lambda(lambda y: torch.zeros(64, dtype=torch.float).scatter_(dim=0, index=torch.tensor(y), value=1))
         ])
-
         GTSRB_train=datasets.GTSRB(
             root =r'.\mlss\GTSRB',
             split='train', 
