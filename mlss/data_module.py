@@ -1,22 +1,31 @@
 
+
+from numpy import dtype
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from torchvision import datasets
-from torchvision.transforms import ToTensor, transforms
-import torch
+from torchvision.transforms import ToTensor, transforms,InterpolationMode
 
 
-class GTSRBDataModule(pl.LightningDataModule):
-    def __init__(self,batch_size, device='cuda'):
+
+class ImageDataModule(pl.LightningDataModule):
+    def __init__(self,batch_size):
         self.batch_size=batch_size
         self.prepare_data_per_node = True
         
         self._log_hyperparams = False
 
     def prepare_data(self):
-        datasets.GTSRB(root=r'.\mlss\GTSRB',split='train',download=True)
-        datasets.GTSRB(root=r'.\mlss\GTSRB',split='test',download=True)
+        dataset=datasets.Cityscapes(root=r'.\mlss\data\cityscapes' , split="train" , mode="fine",target_type='semantic')
+        datasets.Cityscapes(root=r'.\mlss\data\cityscapes',split='val',mode='fine',target_type='semantic')
+        datasets.Cityscapes(root=r'.\mlss\data\cityscapes',split='test',mode='fine',target_type='semantic')
+        
+
+            
+
+
+    
 
     def setup(self,stage=None):
 
@@ -27,70 +36,89 @@ class GTSRBDataModule(pl.LightningDataModule):
         ])
 
         target_transformations= transforms.Compose([
-          transforms.Lambda(lambda y: torch.zeros(64, dtype=torch.float).scatter_(dim=0, index=torch.tensor(y), value=1))
+            transforms.ToTensor(),
+            transforms.Resize(560,interpolation=InterpolationMode.NEAREST),
+            transforms.CenterCrop(560)
+            
         ])
-        GTSRB_train=datasets.GTSRB(
-            root =r'.\mlss\GTSRB',
-            split='train', 
+
+        self.Cityscapes_train=datasets.Cityscapes(
+            root=r'.\mlss\data\cityscapes',
+            split='train',
+            mode='fine',
+            target_type='semantic', 
             transform=transformations,
             target_transform=target_transformations
             
             
         )
+       
+        dataset=self.Cityscapes_val=datasets.Cityscapes(
+            root=r'.\mlss\data\cityscapes',
+            split='val',
+            mode='fine',
+            target_type='semantic', 
+            transform=transformations,
+            target_transform=target_transformations)
         
-        self.GTSRB_test=datasets.GTSRB(
-            root =r'.\mlss\GTSRB',
+
+        
+        self.Cityscapes_test=datasets.Cityscapes(
+            root=r'.\mlss\data\cityscapes',
             split='test',
+            mode='fine',
+            target_type='semantic', 
             transform=transformations,
             target_transform=target_transformations       
         )
 
-        train_data_size=int(len(GTSRB_train) * 0.8)
-        valid_data_size=len(GTSRB_train)-train_data_size
-
-        self.GTSRB_train,self.GTSRB_val=random_split(GTSRB_train,[train_data_size,valid_data_size])
-        self.GTSRB_test=datasets.GTSRB(root='.\mlss\GTSRB',split='test')
+        
 
 
 
 
     def train_dataloader(self):
 
-        GTSRB_train = DataLoader(
-        self.GTSRB_train,
+        Cityscapes_train = DataLoader(
+        self.Cityscapes_train,
         batch_size=self.batch_size,
         shuffle=True,
         num_workers=2,
         pin_memory=True,
         drop_last=True)
 
-        return GTSRB_train
+        return Cityscapes_train
+
 
 
     
     def val_dataloader(self):
 
-        GTSRB_val = DataLoader(
-        self.GTSRB_val,
+        Cityscapes_val = DataLoader(
+        self.Cityscapes_val,
         batch_size=self.batch_size,
         shuffle=False,
         num_workers=2,
         pin_memory=False,
         drop_last=True)
 
-        return GTSRB_val
+        return Cityscapes_val
 
 
     def test_dataloader(self):
 
-        GTSRB_test = DataLoader(
-        self.GTSRB_test,
+        Cityscapes_test = DataLoader(
+        self.Cityscapes_test,
         batch_size=self.batch_size,
         shuffle=False,
         num_workers=2,
         drop_last=True)
 
-        return GTSRB_test
+        return Cityscapes_test
+
+
+
+
 
 
 

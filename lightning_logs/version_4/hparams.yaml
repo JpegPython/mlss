@@ -1,0 +1,5 @@
+early_stopping_patience: 100
+in_channels: 3
+lr: 0.001
+lr_scheduler_patience: 10
+num_classes: 10

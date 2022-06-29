@@ -35,17 +35,11 @@ class UNETModule(pl.LightningModule):
         images, targets = batch
         # Apply the semantic segmentation network.
         logits = self.net(images)
-
-
-        t=[]
-        for te in targets:
-            k=torch.zeros((560,560),device=logits.device).long()
-            t.append(k)
-        target=torch.stack(t)
-
+        target=targets.to(device=logits.device).view(-1,560,560).long()
         
         
 
+        
         # Compute and log the loss and the accuracy based on model output and real labels.
         loss = self.loss_fn(logits, target)
         self.log(f'{task}/Loss/Step', loss)

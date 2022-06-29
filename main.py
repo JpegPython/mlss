@@ -1,8 +1,7 @@
 import argparse
 
 from pytorch_lightning import Trainer
-import torch
-from mlss.data_module import GTSRBDataModule
+from mlss.data_module import ImageDataModule
 from mlss.unet_module import UNETModule
 
 
@@ -24,15 +23,15 @@ from torch.optim import Adam
 
 def main(args: argparse.Namespace) -> None:
 
-    batch_size=8
+    batch_size=4
     
     
-    data=GTSRBDataModule(batch_size)
+    data=ImageDataModule(batch_size)
 
-    model=UNETModule(in_channels=3,num_classes=32, lr=0.001, early_stopping_patience=100, lr_scheduler_patience=10)
+    model=UNETModule(in_channels=3,num_classes=10, lr=0.001, early_stopping_patience=100, lr_scheduler_patience=10)
     
 
-    trainer = Trainer(gpus=1)
+    trainer = Trainer(accelerator="cpu")
 
     trainer.fit(model, datamodule=data)
     
